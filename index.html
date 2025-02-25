@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+
+    <link rel="manifest" href="manifest.json">
+    <!--Bootstrap CDNS-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-dark">
+    <div class="d-flex min-vh-100 justify-content-center align-items-center">
+        <div class="card col-md-6 col-lg-4 rounded-4" aria-label="Weather information for your city">
+            <h1 class="text-center text-primary">Web App</h1>
+
+                <div class="d-flex justify-content-center">
+                    <img src="images/weather.png" alt="Cloud and Sun Logo" style="max-width: 30%;">
+                </div>
+
+            <div class="card-body d-flex flex-column p-4">
+            
+            <div class="d-flex align-items-start mt-0 mb-3 mx-auto">
+                <h1><i class="bi bi-geo text-success"></i></h1>
+                <h1 class="text-success">Cookeville</h1>
+            </div>
+
+            <div class="d-flex flex-column align-items-start">
+                <div id="divTemp">
+                </div>
+
+               <div id="divHumid">
+                </div>
+
+                <div id="divRain">
+                </div>
+            </div>
+            
+
+            <div class="d-flex flex-column mt-4">
+                <h3>Day/Night</h3>
+                <div id="divDay">
+                </div>
+            </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <!--Bootstrap CDN-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!--Sweetalert CDN-->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //Uses Geolocation api to retrieve the longitude and latitude of the user's position
+        function getLocation() {
+            if (navigator.geolocation){
+                navigator.geolocation.getCurrentPosition(
+                //Will pass latitude and longitude to getWeather
+                (position) => {
+                    const latitude = position.coords.latitude
+                    const longitude = position.coords.longitude
+                    getWeather(latitude, longitude)
+                },
+                //Will pop up a sweetalert to tell the user to allow location
+                (error) => {
+                    Swal.fire("Please allow location.")
+                })  
+            }
+        }
+
+        async function getWeather(latitude, longitude){
+            const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,is_day,rain&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+
+            //Declartion of icons for later use
+            let tempIcon
+            let rainIcon
+            let isDayIcon
+            let humidIcon = "bi bi-moisture text-primary"
+
+            try{
+                //Will fetch weather data from api
+                const objResponse = await fetch(apiUrl)
+                const objData = await objResponse.json()
+
+                //Checks if objData is not empty
+                if (objData){
+                    //Assigns the json values to variables
+                    const objTemperature = objData.current.temperature_2m
+                    const objRain = objData.current.rain
+                    const objDay = objData.current.is_day
+                    const objHumidity = objData.current.relative_humidity_2m
+
+                    //For temp icon
+                    if(objTemperature >= 80){
+                        tempIcon = "bi bi-thermometer-high text-danger"
+                    }
+                    else if(objTemperature >= 55){
+                        tempIcon = "bi bi-thermometer-half text-warning"
+                    }
+                    else if(objTemperature >= 30){
+                        tempIcon = "bi bi-thermometer-low text-primary"
+                    }
+                    else{
+                        tempIcon = "bi bi-thermometer-snow text-info"
+                    }
+
+                    //For rain icon
+                    if(objRain == 0){
+                        rainIcon = "bi bi-cloud-sun-fill text-info"
+                    }
+                    else if(objRain > .30){
+                        rainIcon = "bi bi-cloud-rain-heavy-fill text-primary"
+                    }
+                    else{
+                        rainIcon = "bi bi-cloud-drizzle-fill text-primary"
+                    }
+                    
+                    //For day icon
+                    if(objDay == 1){
+                        isDayIcon = "bi bi-brightness-high-fill text-warning"
+                    }
+                    else{
+                        isDayIcon = "bi bi-moon-stars-fill text-warning"
+                    }
+
+                    //Will write HTML directly to the associated div tags
+                    document.getElementById('divTemp').innerHTML = 
+                    `
+                    <h2><i class="${tempIcon}"></i>${objTemperature}°F</h2>
+                    `
+
+                    document.getElementById('divRain').innerHTML = 
+                    `
+                    <h2><i class="${rainIcon}"></i>Rain: ${objRain}" Inches</h2>
+                    `
+                    
+                    document.getElementById('divHumid').innerHTML = 
+                    `
+                    <h2><i class="${humidIcon}"></i>Humidity: ${objHumidity}%</h2>
+                    `
+
+                    document.getElementById('divDay').innerHTML = 
+                    `
+                    <h2><i class="${isDayIcon} display-2"></i></h2>
+                    `
+                }
+            }
+            //Will pop up a sweetalert if user location wasn't retrieved
+            catch (error){
+                console.error("Error fetching weather")
+                Swal.fire("Unable to retrieve weather data.")
+            }
+            
+        }
+
+        getLocation()
+    </script>
+</body>
+</html>
